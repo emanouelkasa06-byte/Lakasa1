@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LAKASA Booking</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+  :root {
+    --turquoise: #40c9c6;
+    --brown: #6b4c3b;
+    --beige: #f4ead5;
+    --dark-brown: #4a3729;
+    --white: #fff;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin:0; padding:0;
+    font-family: 'Poppins', sans-serif;
+    background: var(--beige);
+    color: var(--dark-brown);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  header {
+    background: var(--brown);
+    width: 100%;
+    padding: 1.5rem 0;
+    text-align: center;
+    color: var(--beige);
+    font-weight: 700;
+    font-size: 2.5rem;
+    letter-spacing: 0.15em;
+    user-select: none;
+    font-family: 'Poppins', sans-serif;
+    box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
+  }
+  main {
+    max-width: 480px;
+    width: 90vw;
+    margin: 2rem auto 4rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgb(0 0 0 / 0.08);
+    padding: 1rem 1.5rem 2rem;
+  }
+  h2 {
+    color: var(--brown);
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  .calendar {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px 10px;
+    margin-bottom: 1.5rem;
+    user-select: none;
+  }
+  .day-label {
+    font-weight: 600;
+    text-align: center;
+    color: var(--turquoise);
+    border-bottom: 2px solid var(--turquoise);
+    padding-bottom: 4px;
+    font-size: 0.9rem;
+  }
+  .slot {
+    border: 1.8px solid var(--turquoise);
+    border-radius: 5px;
+    font-size: 0.8rem;
+    padding: 6px 4px;
+    text-align: center;
+    cursor: pointer;
+    background: var(--beige);
+    transition: background-color 0.25s ease, border-color 0.25s ease;
+  }
+  .slot.booked {
+    background: #d7d7d7;
+    border-color: #999;
+    color: #666;
+    cursor: not-allowed;
+    text-decoration: line-through;
+  }
+  .slot.selected {
+    background: var(--turquoise);
+    color: var(--beige);
+    border-color: var(--brown);
+  }
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  label {
+    font-weight: 600;
+    color: var(--brown);
+  }
+  input[type="text"], input[type="tel"] {
+    padding: 0.5rem;
+    border-radius: 5px;
+    border: 1.5px solid var(--turquoise);
+    font-size: 1rem;
+    outline-offset: 2px;
+    transition: border-color 0.25s ease;
+  }
+  input[type="text"]:focus, input[type="tel"]:focus {
+    border-color: var(--brown);
+  }
+  button {
+    background: var(--brown);
+    color: var(--beige);
+    padding: 0.75rem;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: background-color 0.3s ease;
+  }
+  button:hover:not(:disabled) {
+    background: var(--turquoise);
+    color: var(--brown);
+  }
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .info-text {
+    font-size: 0.85rem;
+    color: var(--dark-brown);
+    margin-top: 1rem;
+    text-align: center;
+  }
+  .confirmation {
+    background: #d9f7d9;
+    border: 1.5px solid #53a753;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    color: #2f6b2f;
+    margin-top: 1rem;
+    text-align: center;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<header>LAKASA</header>
+<main>
+  <h2>Book Your Appointment</h2>
+  <div class="calendar" aria-label="Available appointment slots">
+    <!-- Day Labels -->
+    <div class="day-label" aria-hidden="true">Monday</div>
+    <div class="day-label" aria-hidden="true">Tuesday</div>
+    <div class="day-label" aria-hidden="true">Wednesday</div>
+    <div class="day-label" aria-hidden="true">Thursday</div>
+    <div class="day-label" aria-hidden="true">Friday</div>
+    <div class="day-label" aria-hidden="true">Saturday</div>
+  </div>
+  <form id="bookingForm" aria-live="polite" aria-label="Appointment booking form">
+    <input type="hidden" name="slot" id="selectedSlot" />
+    <label for="nameInput">Full Name *</label>
+    <input type="text" id="nameInput" name="name" required autocomplete="name" placeholder="Your full name" />
+    <label for="phoneInput">Phone Number *</label>
+    <input type="tel" id="phoneInput" name="phone" required autocomplete="tel" placeholder="+30 69xxxxxxxx" pattern="^\+?\d{7,15}$" />
+    <button type="submit" disabled>Request Appointment</button>
+  </form>
+  <div class="info-text">
+    Appointments are 30 minutes.<br />
+    Available Monday to Saturday, 12:00 PM - 8:00 PM.<br />
+    You will receive an SMS for confirmation shortly after.
+  </div>
+  <div id="confirmationMsg" class="confirmation" style="display:none;"></div>
+</main>
+<script>
+  (function(){
+    const calendar = document.querySelector('.calendar');
+    const bookingForm = document.getElementById('bookingForm');
+    const selectedSlotInput = document.getElementById('selectedSlot');
+    const nameInput = document.getElementById('nameInput');
+    const phoneInput = document.getElementById('phoneInput');
+    const submitBtn = bookingForm.querySelector('button');
+    const confirmationMsg = document.getElementById('confirmationMsg');
+
+    // Config
+    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const startHour = 12; // 12 PM
+    const endHour = 20;   // 8 PM
+    const slotDurationMinutes = 30;
+
+    // Simulated booked slots (ISO strings). Replace or load real data here.
+    // Format: "Day HH:MM" (24h)
+    const bookedSlots = new Set([
+      "Monday 13:00",
+      "Wednesday 17:30",
+      "Friday 15:30"
+    ]);
+
+    // Helper to format time string
+    function formatTime(hour, minute) {
+      const h = hour.toString().padStart(2,'0');
+      const m = minute.toString().padStart(2,'0');
+      return `${h}:${m}`;
+    }
+
+    // Generate slots grid (6 columns for 6 days)
+    function generateSlots() {
+      // Clear old slots (if any)
+      calendar.querySelectorAll('.slot').forEach(el => el.remove());
+
+      // Calculate how many slots per day
+      const slotsPerDay = ((endHour - startHour)*60) / slotDurationMinutes;
+
+      // For vertical layout, slots stacked under each day, so loop by slot index then day
+      // But our CSS grid is row-wise so we append slots day by day.
+      // We'll append slots day by day, so the grid flow works well.
+
+      for(let i = 0; i < slotsPerDay; i++) {
+        const hour = startHour + Math.floor(i * slotDurationMinutes / 60);
+        const minute = (i * slotDurationMinutes) % 60;
+        const timeLabel = formatTime(hour, minute);
+
+        for(let d=0; d<days.length; d++) {
+          const day = days[d];
+          const slotKey = `${day} ${timeLabel}`;
+          const slotDiv = document.createElement('div');
+          slotDiv.className = 'slot';
+          slotDiv.textContent = timeLabel;
+          slotDiv.dataset.slotKey = slotKey;
+          slotDiv.setAttribute('tabindex','0');
+          slotDiv.setAttribute('role','button');
+          slotDiv.setAttribute('aria-pressed','false');
+          slotDiv.setAttribute('aria-label', `${day}, ${timeLabel} appointment slot`);
+
+          if(bookedSlots.has(slotKey)) {
+            slotDiv.classList.add('booked');
+            slotDiv.setAttribute('aria-disabled', 'true');
+          } else {
+            slotDiv.addEventListener('click', onSlotClick);
+            slotDiv.addEventListener('keydown', onSlotKeyDown);
+          }
+          calendar.appendChild(slotDiv);
+        }
+      }
+    }
+
+    let selectedSlot = null;
+
+    function onSlotClick(e) {
+      const slot = e.currentTarget;
+      if(slot.classList.contains('booked')) return;
+
+      selectSlot(slot);
+    }
+    function onSlotKeyDown(e) {
+      if(e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        e.currentTarget.click();
+      }
+    }
+
+    function selectSlot(slot) {
+      // Deselect previous
+      if(selectedSlot) {
+        selectedSlot.classList.remove('selected');
+        selectedSlot.setAttribute('aria-pressed', 'false');
+      }
+      selectedSlot = slot;
+      selectedSlot.classList.add('selected');
+      selectedSlot.setAttribute('aria-pressed', 'true');
+
+      selectedSlotInput.value = slot.dataset.slotKey;
+      submitBtn.disabled = false;
+    }
+
+    // Validate form fields & enable/disable submit
+    function validateForm() {
+      const validName = nameInput.value.trim().length > 1;
+      const validPhone = phoneInput.validity.valid;
+      const slotChosen = selectedSlotInput.value.length > 0;
+      submitBtn.disabled = !(validName && validPhone && slotChosen);
+    }
+
+    nameInput.addEventListener('input', validateForm);
+    phoneInput.addEventListener('input', validateForm);
+
+    bookingForm.addEventListener('submit', e => {
+      e.preventDefault();
+      if(submitBtn.disabled) return;
+
+      // For demo: simulate SMS by showing confirmation text.
+      // In real use, you need backend to send SMS or API integration.
+      const name = nameInput.value.trim();
+      const phone = phoneInput.value.trim();
+      const slot = selectedSlotInput.value;
+
+      // Mark slot as booked (simulate)
+      bookedSlots.add(slot);
+      selectedSlot.classList.add('booked');
+      selectedSlot.classList.remove('selected');
+      selectedSlot.setAttribute('aria-disabled', 'true');
+      selectedSlot.removeEventListener('click', onSlotClick);
+      selectedSlot.removeEventListener('keydown', onSlotKeyDown);
+      selectedSlot.setAttribute('aria-pressed', 'false');
+      selectedSlot = null;
+
+      // Clear form
+      bookingForm.reset();
+      selectedSlotInput.value = '';
+      submitBtn.disabled = true;
+
+      confirmationMsg.style.display = 'block';
+      confirmationMsg.textContent = `Thanks ${name}! Your request for ${slot} has been received. You will get an SMS confirmation soon.`;
+
+      // Scroll to confirmation message
+      confirmationMsg.scrollIntoView({behavior:'smooth'});
+    });
+
+    generateSlots();
+    validateForm();
+  })();
+</script>
+</body>
+</html>
